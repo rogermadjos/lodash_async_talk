@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lodash + Async</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+    </style>
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle
+
+# [Lodash](https://lodash.com/docs)
+
+### A JavaScript utility library delivering consistency, modularity, performance, & extras.
+
+---
+
+## Map
+```js
+_.map(collection, [iteratee=_.identity], [thisArg])
+```
+
+### Example
+```js
+/*
+  Generate the multiples of 5 between 0 and 100 inclusive.
+*/
+
+var _ = require('lodash');
+
+var res = _.map(_.range(21), function(item) {
+  return item * 5;
+});
+```
+---
+## Filter
+```js
+_.filter(collection, [predicate=_.identity], [thisArg])
+```
+
+### Example
+```js
+/*
+  Return all odd numbers
+*/
+
+var _ = require('lodash');
+
+var res = _.filter(_.range(20), function(item) {
+  return item % 2 === 1;
+});
+```
+---
+## Reduce
+```js
+_.reduce(collection, [iteratee=_.identity], [accumulator], [thisArg])
+```
+
+### Example
+```js
+/*
+  Return total
+*/
+
+var _ = require('lodash');
+
+var res = _.reduce(_.range(20), function(accum, item) {
+  return accum + item;
+}, 0);
+```
+or Alternatively
+```js
+var res = _.reduce(_.range(20), _.add, 0);
+```
+---
+### Chaining
+
+```js
+/*
+  Given an array of unique integers, create another array
+  containing groups or chunks of those integers that
+  are contiguous to each other.
+
+  eg, given
+  [20, 7, 21, 9, 99, 6, 4, 2, 100, 23, 22, 3, 0]
+
+  should result to
+  [[0], [2, 3, 4], [6, 7], [9], [20, 21, 22, 23], [99, 100]]
+*/
+
+var _ = require('lodash');
+
+var arr = [20, 7, 21, 9, 99, 6, 4, 2, 100, 23, 22, 3, 0];
+
+var res = _(arr).sortBy().reduce(function(accum, item) {
+  if(_.last(_.last(accum)) === item - 1) {
+    _.last(accum).push(item);
+  }
+  else {
+    accum.push([item]);
+  }
+  return accum;
+}, []);
+```
+---
+### Default Parameters
+```js
+/*
+  params:
+    limit
+    offset
+*/
+
+var operation = function(params) {
+  params = _.assign(params || {}, {
+    limit: 100,
+    offset: 0
+  });
+  // operations here
+};
+```
+---
+### Other useful functions
+
+```js
+_.intersection
+_.difference
+_.union
+_.contains
+_.each
+_.times
+_.first
+_.take
+_.compact
+_.pluck
+```
+
+---
+
+class: center, middle
+
+# [Async](https://www.npmjs.com/package/async)
+
+### A utility module which provides straight-forward, powerful functions for working with asynchronous JavaScript.
+
+---
+
+### Asynchronous Call
+```js
+var asyncOp = function(predicate, callback) {
+  predicate = predicate || function() {};
+  setTimeout(function() {
+    try {
+      var result = predicate();
+      callback(null, result);
+    }
+    catch(err) {
+      callback(err);
+    }
+  }, Math.random() * 1000);
+};
+```
+---
+
+## Pyramid of Doom
+```js
+asyncOp(null, function() {
+  console.log('1');
+  asyncOp(null, function() {
+    console.log('2');
+    asyncOp(null, function() {
+      console.log('3');
+      asyncOp(null, function() {
+        console.log('4');
+        asyncOp(null, function() {
+          console.log('5');
+          console.log('all done');
+        });
+      });
+    });
+  });
+});
+```
+---
+## Useful Functions
+```js
+  async.series
+  async.parallel
+  async.auto
+  async.each
+```
+---
+## Series
+```js
+var async = require('async');
+
+async.series([
+  function(callback) {
+    asyncOp(null, function() {
+      console.log('1');
+      callback();
+    });
+  },
+  function(callback) {
+    asyncOp(null, function() {
+      console.log('2');
+      callback();
+    });
+  },
+  function(callback) {
+    asyncOp(null, function() {
+      console.log('3');
+      callback();
+    });
+  },
+  . . . .
+], function() {
+  console.log('all done');
+});
+```
+---
+
+## Auto
+```js
+var async = require('async');
+
+async.auto({
+  op1: function(callback) {
+    asyncOp(function() {
+      console.log('a1');
+    }, callback);
+  },
+  op2: ['op1', function(callback) {
+    asyncOp(function() {
+      console.log('a2');
+    }, callback);
+  }],
+  op3: function(callback) {
+    asyncOp(function() {
+      console.log('b1');
+    }, callback);
+  },
+  op4: ['op3', function(callback) {
+    asyncOp(function() {
+      console.log('b2');
+    }, callback);
+  }]
+}, function() {
+  console.log('all done');
+});
+```
+---
+## Each
+```js
+var async = require('async');
+
+var arr = [0, 1, 2, 3];
+
+async.each(arr, function(item, callback) {
+  asyncOp(function() {
+    console.log(item);
+  }, callback);
+}, function() {
+  console.log('all done');
+})
+```
+---
+    </textarea>
+    <script src="remark.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
